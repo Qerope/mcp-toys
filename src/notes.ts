@@ -6,6 +6,7 @@ import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+import { z } from 'zod';
 
 const ROOT = path.resolve(process.env.NOTES_DIR ?? './notes');
 
@@ -48,8 +49,6 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
   switch (req.params.name) {
     case 'read_note':
       return { content: [{ type: 'text', text: await fs.readFile(path.join(ROOT, args.name), 'utf8') }] };
-    case 'search_notes':
-      return { content: [{ type: 'text', text: JSON.stringify(await searchNotes(args.query)) }] };
     default:
       throw new Error('unknown tool ' + req.params.name);
   }
