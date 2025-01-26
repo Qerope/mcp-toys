@@ -10,6 +10,14 @@ import { z } from 'zod';
 
 const ROOT = path.resolve(process.env.NOTES_DIR ?? './notes');
 
+function resolveNote(name: string): string {
+  const full = path.resolve(ROOT, name);
+  if (full !== ROOT && !full.startsWith(ROOT + path.sep)) {
+    throw new Error('path outside notes directory');
+  }
+  return full;
+}
+
 async function listNotes(): Promise<string[]> {
   const entries = await fs.readdir(ROOT, { recursive: true });
   return entries.filter((e) => e.endsWith('.md')).sort();
