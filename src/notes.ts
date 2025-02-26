@@ -1,11 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-  ListToolsRequestSchema,
-  CallToolRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 
 const ROOT = path.resolve(process.env.NOTES_DIR ?? './notes');
@@ -35,31 +31,26 @@ async function searchNotes(query: string) {
   return hits.slice(0, 50);
 }
 
-const server = new Server({ name: 'notes', version: '0.1.0' }, { capabilities: { tools: {} } });
+export function buildServer(): McpServer {
+  const server = new McpServer({ name: 'notes', version: '0.2.0' });
 
-server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: [
-    {
-      name: 'read_note',
-      description: 'Read a markdown note by relative path',
-      inputSchema: { type: 'object', properties: { name: { type: 'string' } }, required: ['name'] },
-    },
-    {
-      name: 'search_notes',
-      description: 'Case-insensitive substring search across all notes',
-      inputSchema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] },
-    },
-  ],
-}));
+  server.tool(
+    'read_note',
+    'Read a markdown note by relative path',
+    { name: z.string() },
+    async ({ name }) => ({
+      content: [{ type: 'text', text: await fs.readFile(resolveNote(name), 'utf8') }],
+    }),
+  );
 
-server.setRequestHandler(CallToolRequestSchema, async (req) => {
-  const args = req.params.arguments as any;
-  switch (req.params.name) {
-    case 'read_note':
-      return { content: [{ type: 'text', text: await fs.readFile(path.join(ROOT, args.name), 'utf8') }] };
-    default:
-      throw new Error('unknown tool ' + req.params.name);
-  }
-});
+  server.tool(
+    'search_notes',
+    'Case-insensitive substring search across all notes',
+    { query: z.string().min(1) },
+    async ({ query }) => ({
+      content: [{ type: 'text', text: JSON.stringify(await searchNotes(query)) }],
+    }),
+  );
 
-await server.connect(new StdioServerTransport());
+  return server;
+}
