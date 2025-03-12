@@ -52,5 +52,17 @@ export function buildServer(): McpServer {
     }),
   );
 
+  server.resource(
+    'note',
+    new ResourceTemplate('note://{name}', {
+      list: async () => ({
+        resources: (await listNotes()).map((f) => ({ uri: 'note://' + f, name: f, mimeType: 'text/markdown' })),
+      }),
+    }),
+    async (uri, { name }) => ({
+      contents: [{ uri: uri.href, mimeType: 'text/markdown', text: await fs.readFile(resolveNote(String(name)), 'utf8') }],
+    }),
+  );
+
   return server;
 }
