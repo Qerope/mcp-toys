@@ -64,5 +64,17 @@ export function buildServer(): McpServer {
     }),
   );
 
+  server.prompt('summarise_note', { name: z.string() }, async ({ name }) => ({
+    messages: [
+      {
+        role: 'user',
+        content: {
+          type: 'text',
+          text: 'Summarise this note in five bullet points:\n\n' + (await fs.readFile(resolveNote(name), 'utf8')),
+        },
+      },
+    ],
+  }));
+
   return server;
 }
