@@ -18,6 +18,9 @@ app.post('/mcp', async (req, res) => {
         transports.set(id, transport!);
       },
     });
+    transport.onclose = () => {
+      if (transport!.sessionId) transports.delete(transport!.sessionId);
+    };
     await buildServer().connect(transport);
   }
   await transport.handleRequest(req, res, req.body);
