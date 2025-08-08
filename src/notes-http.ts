@@ -8,6 +8,15 @@ app.use(express.json());
 
 const transports = new Map<string, StreamableHTTPServerTransport>();
 
+app.use((req, res, next) => {
+  const token = process.env.TOKEN;
+  if (token && req.headers.authorization !== 'Bearer ' + token) {
+    res.status(401).json({ error: 'unauthorized' });
+    return;
+  }
+  next();
+});
+
 app.post('/mcp', async (req, res) => {
   const sid = req.headers['mcp-session-id'] as string | undefined;
   let transport = sid ? transports.get(sid) : undefined;
