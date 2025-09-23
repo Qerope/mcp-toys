@@ -49,6 +49,7 @@ export function buildServer(): McpServer {
     { query: z.string().min(1) },
     async ({ query }) => ({
       content: [{ type: 'text', text: JSON.stringify(await searchNotes(query)) }],
+      structuredContent: { hits: await searchNotes(query) },
     }),
   );
 
