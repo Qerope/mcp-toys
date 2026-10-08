@@ -2,9 +2,14 @@ import express from 'express';
 import { randomUUID } from 'node:crypto';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { buildServer } from './notes.js';
+import { log } from './log.js';
 
 const app = express();
 app.use(express.json());
+app.use((req, _res, next) => {
+  log('request', { method: req.method, path: req.path, session: req.headers['mcp-session-id'] });
+  next();
+});
 
 const transports = new Map<string, StreamableHTTPServerTransport>();
 
